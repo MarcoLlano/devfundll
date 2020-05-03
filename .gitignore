@@ -1,0 +1,12 @@
+## Ignore java temporary files, build results, and
+
+# Intellij Idea
+.idea/
+*.sln.iml
+
+# Gradle
+.gradle/
+gradle/
+
+# Build
+build/
