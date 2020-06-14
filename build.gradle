@@ -26,4 +26,5 @@ repositories {
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile("org.springframework.boot:spring-boot-starter-web")
+    compile group: 'net.bramp.ffmpeg', name: 'ffmpeg', version: '0.1'
 }
