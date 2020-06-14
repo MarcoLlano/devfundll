@@ -11,10 +11,7 @@
 
 package com.jalasoft.practice.controller;
 
-import net.bramp.ffmpeg.FFmpeg;
-import net.bramp.ffmpeg.FFmpegExecutor;
-import net.bramp.ffmpeg.FFprobe;
-import net.bramp.ffmpeg.builder.FFmpegBuilder;
+import com.jalasoft.practice.ffmpeg.Ffmpeg;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -30,50 +27,38 @@ import java.util.Objects;
 public class ConverterController {
 
     @PostMapping
-    public String convertVideo(@RequestParam(value="video") MultipartFile video) {
+    public String convertVideo(@RequestParam(value="outputFormat") String outputFormat,
+                               @RequestParam(value="destination") String destination,
+                               @RequestParam(value="newFileName") String newFileName,
+                               @RequestParam(value="video") MultipartFile video) {
+        String originalName = video.getOriginalFilename();
+        String status;
         String filePath = System.getProperty("user.dir") + "/converted/"
-                + Objects.requireNonNull(video.getOriginalFilename());
+                + Objects.requireNonNull(originalName);
         File convertedFile = new File(filePath);
+        Ffmpeg ffmpeg = new Ffmpeg();
 
         try {
-            FFmpeg ffmpeg = new FFmpeg(filePath);
-            FFprobe ffprobe = new FFprobe("/path/to/ffprobe");
-
-            String test = convertedFile.getAbsolutePath();
-            String test1 = convertedFile.getCanonicalPath();
-            FFmpegBuilder builder = new FFmpegBuilder()
-                    .setInput(convertedFile.getAbsolutePath())     // Filename, or a FFmpegProbeResult
-                    .overrideOutputFiles(true) // Override the output if it exists
-
-                    .addOutput(filePath)   // Filename for the destination
-                    .setFormat("wmv")        // Format is inferred from filename, or can be set
-                    .setTargetSize(250_000)  // Aim for a 250KB file
-
-                    .disableSubtitle()       // No subtiles
-
-                    .setAudioChannels(1)         // Mono audio
-                    .setAudioCodec("aac")        // using the aac codec
-                    .setAudioRate(48_000)  // at 48KHz
-                    .setAudioRate(32768)      // at 32 kbit/s
-
-                    .setVideoCodec("libx264")     // Video using x264
-                    .setVideoFramerate(24)     // at 24 frames per second
-                    .setVideoResolution(640, 480) // at 640x480 resolution
-
-                    .setStrict(FFmpegBuilder.Strict.EXPERIMENTAL) // Allow FFmpeg to use experimental specs
-                    .done();
-
-            FFmpegExecutor executor = new FFmpegExecutor(ffmpeg, ffprobe);
-
-            // Run a one-pass encode
-            executor.createJob(builder).run();
-
-            // Or run a two-pass encode (which is better quality at the cost of being slower)
-            executor.createTwoPassJob(builder).run();
+            String newName = newFileName.equals("") ? originalName.substring(0, originalName.lastIndexOf('.')) :
+                    newFileName;
+            String newDestination = (destination.equals("")) ? System.getProperty("user.dir") + "/converted/"
+                    + newName + "." + outputFormat : destination + "." + outputFormat;
+            status = "Success convert video " + originalName + " to ." + outputFormat
+                    + " format. Saved in " + newDestination;
+            if (!originalName.endsWith(outputFormat)) {
+                video.transferTo(convertedFile);
+                ffmpeg.convertFile(convertedFile, newDestination, outputFormat);
+            }
+            else {
+                status = "Error, the file " + originalName + " is in " + outputFormat +
+                        " format already, it is not needed to convert, please change output format value.";
+            }
         } catch (IOException e) {
-            e.printStackTrace();
+            status = "Error while trying to convert file.\n" + e.getMessage();
+        } catch (NullPointerException e) {
+            status = "Error, file could be corrupted or not exist, please select a new valid file.\n" + e.getMessage();
         }
 
-        return "Hello";
+        return status;
     }
 }

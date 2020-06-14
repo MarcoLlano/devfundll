@@ -17,7 +17,7 @@ import com.jalasoft.practice.loop.Task;
  * Main class for practice 2.
  */
 public class LoopMain {
-    public static void main(String[] args) {
+    public static void main2(String[] args) {
         Task loop = new Task();
 
         // Task 1.
